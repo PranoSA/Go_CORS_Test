@@ -72,11 +72,11 @@ func main() {
 	}
 	defer resp.Body.Close()
 
-	for k := range resp.Header {
-		if strings.HasPrefix(k, "access-control-") {
-			log.Printf("CORS preflight OPTIONS header: %s", k)
-			return //If CORS Headers are present, Then It's a valid CORS configuration
-		}
+	//if Origin is Allowed
+	//if Access-Control-Allow-Origin is present
+	if resp.Header.Values("Access-Control-Allow-Origin") != nil {
+		fmt.Println("Origin Is Allowed For All Methods And Headers")
+		return
 	}
 
 	// If Bad Cors Response -> Origin, Headers, Method doesn't line up
@@ -100,42 +100,32 @@ func main() {
 
 		if strings.Contains(allowedMethods, method) {
 			fmt.Println("Method Allowed " + method)
+
+			//Now Do The Checks for All Headers
+			for _, header := range headers {
+				req, err := http.NewRequest("OPTIONS", ajax_destination, nil)
+				req.Header.Set("Origin", origin)
+				req.Header.Set("Access-Control-Request-Method", method)
+				req.Header.Set("Access-Control-Request-Headers", header)
+
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Print(err)
+					return
+				}
+				defer resp.Body.Close()
+
+				allowedHeaders := resp.Header.Get("Access-Control-Allow-Headers")
+				//If The Header Exists
+				if allowedHeaders != "" {
+					fmt.Println("Header " + header + "  Allowed For Method " + method)
+					continue
+				}
+				fmt.Println("Header " + header + "  Not Allowed For Method " + method)
+			}
 			continue
 		}
 		fmt.Println("Method Not Allowed " + method)
 	}
-
-	//Now Test For Headers - 1x1 -> Bad Because Headers Are Per-Method
-	for _, header := range headers {
-		//Try Per Method also
-		paritcular_header_allowed := true
-		for _, method := range methods {
-			req, err := http.NewRequest("OPTIONS", ajax_destination, nil)
-			req.Header.Set("Origin", origin)
-			req.Header.Set("Access-Control-Request-Method", method)
-			req.Header.Set("Access-Control-Request-Headers", header)
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Print(err)
-				return
-			}
-			defer resp.Body.Close()
-
-			allowedHeaders := resp.Header.Get("Access-Control-Allow-Headers")
-			//If The Header Exists
-			if allowedHeaders != "" {
-				fmt.Println("Header " + header + "  Allowed For Method " + method)
-				continue
-			}
-			paritcular_header_allowed = false
-			fmt.Println("Header " + header + "  Not Allowed For Method " + method)
-		}
-
-		if paritcular_header_allowed && len(methods) > 0 {
-			fmt.Println("Header " + header + " Allowed For All Methods ")
-		}
-	}
-
 }
