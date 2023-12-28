@@ -45,15 +45,6 @@ func main() {
 		return
 	}
 
-	//Make an HTTP Request to the origin with the following information
-	/*
-		Headers :
-			Origin : origin
-			Access-Control-Request-Method : ajax_method
-			Access-Control-Request-Headers : headers
-
-	*/
-
 	req, err := http.NewRequest("OPTIONS", ajax_destination, nil)
 	if err != nil {
 		log.Print(err)
@@ -75,7 +66,7 @@ func main() {
 	//if Origin is Allowed
 	//if Access-Control-Allow-Origin is present
 	if resp.Header.Values("Access-Control-Allow-Origin") != nil {
-		fmt.Println("Origin Is Allowed For All Methods And Headers")
+		fmt.Println("Origin Is Allowed For Headers Specified Method")
 		return
 	}
 
