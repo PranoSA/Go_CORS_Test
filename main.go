@@ -92,6 +92,8 @@ func main() {
 		if strings.Contains(allowedMethods, method) {
 			fmt.Println("Method Allowed " + method)
 
+			checkedForMethodCredentials := false
+
 			//Now Do The Checks for All Headers
 			for _, header := range headers {
 				req, err := http.NewRequest("OPTIONS", ajax_destination, nil)
@@ -106,7 +108,14 @@ func main() {
 					return
 				}
 				defer resp.Body.Close()
-
+				allowedCredentials := resp.Header.Get("Access-Control-Allow-Credentials")
+				if allowedCredentials == "false" && credentials == true {
+					fmt.Println("Credentials Not Allowed For Method " + method)
+				}
+				if allowedCredentials == "true" && credentials == true && checkedForMethodCredentials == false {
+					fmt.Println("Credentials Allowed For Method " + method)
+					checkedForMethodCredentials = true
+				}
 				allowedHeaders := resp.Header.Get("Access-Control-Allow-Headers")
 				//If The Header Exists
 				if allowedHeaders != "" {
